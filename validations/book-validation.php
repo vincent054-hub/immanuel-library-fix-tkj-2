@@ -1,14 +1,17 @@
 <?php
-
+require_once __DIR__ . "/../repositories/book-repository.php";
+require_once __DIR__ . "/../repositories/category-repository.php";
+require_once __DIR__ . "/../repositories/author-repository.php";
 function getBookRequest($request) 
 {
     return [
-        'title' => htmlspecialchars($request['title']),
-        'isbn' => htmlspecialchars($request['isbn']),
-        'year' => htmlspecialchars($request['year']),
-        'stock' => htmlspecialchars($request['stock']),
-        'description' => htmlspecialchars($request['description']),
-        'categoryId' => htmlspecialchars($request['category_id']),
+        'id' => trim(htmlspecialchars($request['id']) ?? ''),
+        'title' => trim(htmlspecialchars($request['title']) ?? ''),
+        'isbn' => trim(htmlspecialchars($request['isbn']) ?? ''),
+        'year' => trim($request['year'] ?? '' ),
+        'stock' => trim($request['stock'] ?? ''),
+        'description' => trim(htmlspecialchars($request['description']) ?? ''),
+        'category_id' => trim(htmlspecialchars($request['category_id']) ?? ''),
         'author_ids' => $request['author_ids'] ?? [],
     ];
 }
@@ -17,11 +20,54 @@ function validateBook($request, $ignoreBookId = 0)
 {
     $errors =[];
     
-    if($request['title'] === '') {
+    if(empty($request['title'])) {
         $errors['title'] = 'Judul Buku wajib diisi';
     } elseif (mb_strlen($request['title']) > 100) {
         $errors['title'] = "Judul buku tidak boleh melebihi dari 100 karakter";
     }
+
+    if($request['isbn'] === '') {
+        $errors['isbn'] = "ISBN wajib diisi";
+    } elseif(isIsbnTaken($request['isbn'] , $ignoreBookId)) {
+        $errors['isbn'] = "ISBN sudah terdaftar sebelumnya";
+    }
+
+    if($request['year'] === '') {
+        $errors['year'] = "Tahun terbit wajib diisi";
+    } elseif(!is_numeric($request['year'])) {
+        $errors['year'] = "Tahun terbit wajib diisi dengan angka";
+    }
+ 
+    if($request['stock'] === '') {
+        $errors['stock'] = "Stock wajib diisi";
+    } elseif(!is_numeric($request['stock'])) {
+        $errors['stock'] = "Stock wajib diisi dengan angka";
+    }
+
+    if($request['category_id'] === '') {
+        $errors['category_id'] = "Kategori wajib dipilih";
+    } elseif(!isCategoryExists($request['category_id'])) {
+        $errors['category_id'] = "Kategori yang dipilih tidak valid";
+    }
+
+    if(empty($request['description'])) {
+        $errors['description'] = 'Deskripsi wajib diisi';
+    } elseif (mb_strlen($request['description']) > 200) {
+        $errors['description'] = "Deskripsi tidak boleh melebihi dari 200 karakter";
+    }
+
+    if(count($request['author_ids']) < 1 ) {
+        $errors['author_ids'] = "Penulis buku wajib dipilih";
+    } else {
+        $authors = getAuthors();
+        $validAuthorIds = array_column($authors, 'id');
+        foreach($request['author_ids'] as $authorId) {
+            if(!in_array($authorId, $validAuthorIds)) {
+                $errors['author_ids'] = "Ada Penulis buku yang dipilih tidak valid";
+            }
+        }
+    }
+
 
     return $errors;
 }

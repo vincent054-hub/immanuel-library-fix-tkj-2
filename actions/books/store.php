@@ -4,7 +4,7 @@ require_once __DIR__ . "/../../config/database.php";
 require_once __DIR__ . "/../../validations/book-validation.php";
 
 
-if (isset($_POST['store']) && $_SERVER['REQUEST_METHOD'] === "POST") {
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
     try {
         $pdo->beginTransaction();
 
@@ -12,19 +12,13 @@ if (isset($_POST['store']) && $_SERVER['REQUEST_METHOD'] === "POST") {
         $errors = validateBook($request);
 
         if (count($errors) > 0 ) {
+            $pdo->rollBack();
             $_SESSION['errors'] = $errors;
             $_SESSION['old'] = $request;
 
             header('Location: ../../pages/books/create.php');
             exit;
         }
-
-        $title = htmlspecialchars($_POST['title']);
-        $isbn = htmlspecialchars($_POST['isbn']);
-        $year = htmlspecialchars($_POST['year']);
-        $stock = htmlspecialchars($_POST['stock']);
-        $description = htmlspecialchars($_POST['description']);
-        $categoryId = htmlspecialchars($_POST['category_id']);
 
         $query = "insert into books (title, isbn, year, stock, description, category_id) 
                   values (:title, :isbn, :year, :stock, :description, :category_id)
@@ -37,15 +31,13 @@ if (isset($_POST['store']) && $_SERVER['REQUEST_METHOD'] === "POST") {
             'year' => $request['year'],
             'stock' => $request['stock'],
             'description' => $request['description'],
-            'category_id' => $request['categoryId']
+            'category_id' => $request['category_id']
         ]);
 
         $bookId = $pdo->lastInsertId();
 
         $query = "insert into book_author (book_id, author_id) values (:book_id, :author_id)";
         $stmt = $pdo->prepare($query);
-
-        $authorIds = $_POST['author_ids'];
 
         $authorIds = $request['author_ids'];
 

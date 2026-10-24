@@ -1,5 +1,4 @@
 <?php
-
 require_once __DIR__ . "/../config/database.php";
 
 function getBooks()
@@ -68,4 +67,23 @@ function getBook($id)
   $book['author_ids'] = array_column($authorIds, 'id'); 
   
   return $book;
+}
+
+function isIsbnTaken($isbn, $ignoreBookId) {
+
+  global $pdo;
+
+  $bookId = intval($ignoreBookId);
+
+  $query = "select count(id) from books where isbn = :isbn && id != :book_id";
+
+  $stmt = $pdo->prepare($query);
+  $stmt->execute([
+      'isbn' => $isbn,
+      'book_id' => $bookId
+  ]);
+
+  $isIsbnTaken = $stmt->fetchColumn() > 0;
+
+  return $isIsbnTaken;
 }
