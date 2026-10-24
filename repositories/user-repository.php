@@ -1,5 +1,5 @@
 <?php
-
+require_once __DIR__ . "/../config/database.php";
 function getUsers()
 {
   $users = [
@@ -34,4 +34,35 @@ function getProfile()
   ];
 
   return $profile;
+}
+
+function isEmailTaken($email) {
+ global $pdo;
+
+ $query = "select count(id) from users where email = :email";
+
+ $stmt = $pdo->prepare($query);
+ $stmt->execute([
+  'email' => $email
+ ]);
+
+ $isEmialTaken = $stmt->fetchColumn() > 0;
+
+ return $isEmialTaken;
+
+}
+
+function findUserByEmail($email) {
+    global $pdo;
+
+    $query = "select * from users where email = :email";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([
+      'email' => $email
+    ]);
+
+    $user = $stmt->fetch();
+
+    return $user;
 }
